@@ -2,17 +2,38 @@
 <html>
 <head>
   <title>My Awesome Website</title>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
 </head>
 <body>
-  <h1>Welcome to My Awesome Website with some changes at 1:33PM</h1>
+  <h1>Welcome to My Awesome Website</h1>
   <p>Created by Shahriar Bappy</p>
   <p>This website was created with the help of ChatGPT</p>
 
-  <h2>Here is an image:</h2>
-  <img src="https://media.istockphoto.com/id/1462591992/photo/the-tomb-of-bibi-pari-in-the-grounds-of-lalbagh-fort-in-dhaka-bangladesh.jpg?s=2048x2048&w=is&k=20&c=BwjDsz7f6ErsWfOdtAOly1DB5Tt37fu3TGDrDIv6HzY=" alt="My first image">
-
   <h2>Here is a button:</h2>
   <button onclick="alert('You clicked the button!')">Click Me!</button>
+
+  <h2>Here is a list from my CSV file:</h2>
+  <ul id="myList"></ul>
+
+  <script>
+    // URL of your CSV file in GitHub
+    const csvUrl = 'https://raw.githubusercontent.com/shahriar2403/my-first-website/main/Meeting Room List.csv';
+
+    // Load and parse CSV
+    Papa.parse(csvUrl, {
+      download: true,
+      complete: function(results) {
+        const list = document.getElementById('myList');
+        results.data.forEach(function(row) {
+          if (row[0]) {  // avoid empty rows
+            const li = document.createElement('li');
+            li.textContent = row[0];
+            list.appendChild(li);
+          }
+        });
+      }
+    });
+  </script>
 
 </body>
 </html>

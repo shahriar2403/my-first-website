@@ -147,8 +147,8 @@ document.getElementById('bookingForm').addEventListener('submit', function(e) {
     confirmation.textContent = `✅ Booking stored! Name: ${name}, Date: ${date}`;
   })
   .catch(error => {
-    console.error("Error!", error.message);
-    confirmation.textContent = `❌ Error submitting form.`;
+  console.error("Error!", error);
+  confirmation.textContent = `❌ Error: ${error.message}`;
   });
 });
 </script>

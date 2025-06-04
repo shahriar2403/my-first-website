@@ -34,7 +34,7 @@
       background-color: #006c94;
     }
 
-    select {
+    select, input[type="date"] {
       padding: 10px;
       font-size: 16px;
       border-radius: 6px;
@@ -46,10 +46,16 @@
       width: 300px;
     }
 
-    select:focus {
+    select:focus, input[type="date"]:focus {
       outline: none;
       border-color: #007acc;
       box-shadow: 0 0 5px rgba(0, 122, 204, 0.5);
+    }
+
+    #selectedDate {
+      font-weight: bold;
+      color: #007acc;
+      margin-top: 10px;
     }
   </style>
 </head>
@@ -59,7 +65,7 @@
   <p>This website was created with the help of ChatGPT</p>
 
   <h2>Here is an image:</h2>
-  <img src=" https://www.tbsnews.net/bangla/sites/default/files/styles/very_big_1/public/images/2025/06/04/lee.jpg?text=My+First+Image" alt="My first image">
+  <img src=" https://www.tbsnews.net/bangla/sites/default/files/styles/very_big_1/public/images/2025/04/01/metro_rail_bangladesh_tbs_2.jpeg?text=My+First+Image" alt="Metro Rail of Bangladesh">
 
   <h2>Here is a button:</h2>
   <button onclick="alert('You clicked the button!')">Click Me!</button>
@@ -68,6 +74,10 @@
   <select id="myDropdown">
     <option value="">-- Select an option --</option>
   </select>
+
+  <h2>Select a date:</h2>
+  <input type="date" id="calendar">
+  <p id="selectedDate">You selected: (none)</p>
 
   <script>
     const csvUrl = 'https://raw.githubusercontent.com/shahriar2403/my-first-website/main/Meeting Room List.csv';
@@ -85,7 +95,6 @@
           }
         });
 
-        // Optional: alert on selection
         dropdown.addEventListener('change', function () {
           if (this.value) {
             alert('You selected: ' + this.value);
@@ -93,7 +102,18 @@
         });
       }
     });
+
+    // Date selection logic
+    const calendar = document.getElementById('calendar');
+    const selectedDateText = document.getElementById('selectedDate');
+
+    calendar.addEventListener('change', function () {
+      if (this.value) {
+        selectedDateText.textContent = 'You selected: ' + this.value;
+      }
+    });
   </script>
 
 </body>
 </html>
+

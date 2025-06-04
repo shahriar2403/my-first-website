@@ -126,8 +126,8 @@
 document.getElementById('bookingForm').addEventListener('submit', function(e) {
   e.preventDefault();
 
-  const name = document.getElementById('name').value;
-  const date = document.getElementById('bookingDate').value;
+  const name = document.getElementById('name').value.trim();
+  const date = document.getElementById('bookingDate').value.trim();
   const confirmation = document.getElementById('confirmationMessage');
 
   if (!name || !date) {
@@ -136,24 +136,24 @@ document.getElementById('bookingForm').addEventListener('submit', function(e) {
   }
 
   fetch("https://script.google.com/macros/s/AKfycbzas9czjYLITFfXZw942THEakxVSG2fFBT0rF4qj8dZpXJrrFVITsKG1lXU_lyy676kRA/exec", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({
-    name: name,
-    date: date
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      name: name,
+      date: date
+    })
   })
-})
-.then(response => response.json())
-.then(data => {
-  document.getElementById("confirmationMessage").textContent =
-    `✅ Booking stored! Name: ${data.name}, Date: ${data.date}`;
-})
-.catch(error => {
-  console.error("Error!", error);
-  document.getElementById("confirmationMessage").textContent =
-    `❌ Error: ${error.message}`;
+  .then(response => response.json())
+  .then(data => {
+    confirmation.textContent = `✅ Booking submitted successfully!`;
+    document.getElementById('bookingForm').reset();
+  })
+  .catch(error => {
+    console.error("Error!", error);
+    confirmation.textContent = `❌ Error: ${error.message}`;
+  });
 });
   </script>
 

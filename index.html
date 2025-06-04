@@ -125,20 +125,32 @@
     });
     // Handle booking form submission
 document.getElementById('bookingForm').addEventListener('submit', function(e) {
-  e.preventDefault(); // prevent page reload
+  e.preventDefault();
 
   const name = document.getElementById('name').value;
   const date = document.getElementById('bookingDate').value;
+  const confirmation = document.getElementById('confirmationMessage');
 
   if (!name || !date) {
     alert("Please enter your name and select a date.");
     return;
   }
 
-  const confirmation = `✅ Booking received! Name: ${name}, Date: ${date}`;
-  document.getElementById('confirmationMessage').textContent = confirmation;
-
-  // (Optional) Send this data somewhere later
+  fetch("https://script.google.com/macros/s/AKfycbzas9czjYLITFfXZw942THEakxVSG2fFBT0rF4qj8dZpXJrrFVITsKG1lXU_lyy676kRA/exec", {
+    method: "POST",
+    body: JSON.stringify({ name: name, date: date }),
+    headers: {
+      "Content-Type": "application/json"
+    }
+  })
+  .then(res => res.json())
+  .then(response => {
+    confirmation.textContent = `✅ Booking stored! Name: ${name}, Date: ${date}`;
+  })
+  .catch(error => {
+    console.error("Error!", error.message);
+    confirmation.textContent = `❌ Error submitting form.`;
+  });
 });
   </script>
 

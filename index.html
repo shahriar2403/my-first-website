@@ -6,29 +6,35 @@
 </head>
 <body>
   <h1>Welcome to My Awesome Website</h1>
-  <p>Created by Shahriar Bappy</p>
+  <p> Created by Shahriar Bappy </p>
   <p>This website was created with the help of ChatGPT</p>
+
+  <h2>Here is an image:</h2>
+  <img src=" https://unsplash.com/photos/misty-mountains-peeking-through-the-clouds-cObqVf6DnDg?text=My+First+Image" alt="My first image">
 
   <h2>Here is a button:</h2>
   <button onclick="alert('You clicked the button!')">Click Me!</button>
 
-  <h2>Here is a list from my CSV file:</h2>
-  <ul id="myList"></ul>
+  <h2>Select an item from my list:</h2>
+  <select id="myDropdown">
+    <option value="">-- Select an option --</option>
+  </select>
 
   <script>
     // URL of your CSV file in GitHub
-    const csvUrl = 'https://raw.githubusercontent.com/shahriar2403/my-first-website/main/Meeting Room List.csv';
+    const csvUrl = 'https://raw.githubusercontent.com/shahriar2403/my-first-website/main/Meeting Room List.csv ';
 
     // Load and parse CSV
     Papa.parse(csvUrl, {
       download: true,
       complete: function(results) {
-        const list = document.getElementById('myList');
+        const dropdown = document.getElementById('myDropdown');
         results.data.forEach(function(row) {
           if (row[0]) {  // avoid empty rows
-            const li = document.createElement('li');
-            li.textContent = row[0];
-            list.appendChild(li);
+            const option = document.createElement('option');
+            option.textContent = row[0];
+            option.value = row[0];
+            dropdown.appendChild(option);
           }
         });
       }

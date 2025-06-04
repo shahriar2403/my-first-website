@@ -78,7 +78,18 @@
   <h2>Select a date:</h2>
   <input type="date" id="calendar">
   <p id="selectedDate">You selected: (none)</p>
+<h2>Booking Form</h2>
+<form id="bookingForm">
+  <label for="name">Your Name:</label><br>
+  <input type="text" id="name" placeholder="Enter your name"><br><br>
 
+  <label for="bookingDate">Booking Date:</label><br>
+  <input type="date" id="bookingDate"><br><br>
+
+  <button type="submit">Submit Booking</button>
+</form>
+
+<p id="confirmationMessage" style="font-weight: bold; color: green;"></p>
   <script>
     const csvUrl = 'https://raw.githubusercontent.com/shahriar2403/my-first-website/main/Meeting Room List.csv';
 
@@ -113,7 +124,23 @@
       }
     });
   </script>
+// Handle booking form submission
+document.getElementById('bookingForm').addEventListener('submit', function(e) {
+  e.preventDefault(); // prevent page reload
 
+  const name = document.getElementById('name').value;
+  const date = document.getElementById('bookingDate').value;
+
+  if (!name || !date) {
+    alert("Please enter your name and select a date.");
+    return;
+  }
+
+  const confirmation = `✅ Booking received! Name: ${name}, Date: ${date}`;
+  document.getElementById('confirmationMessage').textContent = confirmation;
+
+  // (Optional) Send this data somewhere later
+});
 </body>
 </html>
 

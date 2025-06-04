@@ -123,9 +123,8 @@
         selectedDateText.textContent = 'You selected: ' + this.value;
       }
     });
-    // Handle booking form submission
-  <script>
-  document.getElementById('bookingForm').addEventListener('submit', function(e) {
+   <script>
+document.getElementById('bookingForm').addEventListener('submit', function(e) {
   e.preventDefault();
 
   const name = document.getElementById('name').value;
@@ -152,6 +151,8 @@
     console.error("Error!", error.message);
     confirmation.textContent = `❌ Error submitting form.`;
   });
+});
+</script>
   </script>
 
 </body>

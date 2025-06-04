@@ -3,6 +3,55 @@
 <head>
   <title>My Awesome Website</title>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f7f7;
+      padding: 40px;
+      color: #333;
+    }
+
+    h1 {
+      color: #005f99;
+    }
+
+    img {
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #008cba;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background-color: #006c94;
+    }
+
+    select {
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      margin-top: 10px;
+      margin-bottom: 20px;
+      background-color: white;
+      color: #333;
+      width: 300px;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: #007acc;
+      box-shadow: 0 0 5px rgba(0, 122, 204, 0.5);
+    }
+  </style>
 </head>
 <body>
   <h1>Welcome to My Awesome Website</h1>
@@ -10,7 +59,7 @@
   <p>This website was created with the help of ChatGPT</p>
 
   <h2>Here is an image:</h2>
-  <img src=" https://unsplash.com/photos/misty-mountains-peeking-through-the-clouds-cObqVf6DnDg?text=My+First+Image" alt="My first image">
+  <img src=" https://www.tbsnews.net/bangla/sites/default/files/styles/very_big_1/public/images/2025/06/04/lee.jpg?text=My+First+Image" alt="My first image">
 
   <h2>Here is a button:</h2>
   <button onclick="alert('You clicked the button!')">Click Me!</button>
@@ -21,20 +70,25 @@
   </select>
 
   <script>
-    // URL of your CSV file in GitHub
-    const csvUrl = 'https://raw.githubusercontent.com/shahriar2403/my-first-website/main/Meeting Room List.csv ';
+    const csvUrl = 'https://raw.githubusercontent.com/shahriar2403/my-first-website/main/Meeting Room List.csv';
 
-    // Load and parse CSV
     Papa.parse(csvUrl, {
       download: true,
       complete: function(results) {
         const dropdown = document.getElementById('myDropdown');
         results.data.forEach(function(row) {
-          if (row[0]) {  // avoid empty rows
+          if (row[0]) {
             const option = document.createElement('option');
             option.textContent = row[0];
             option.value = row[0];
             dropdown.appendChild(option);
+          }
+        });
+
+        // Optional: alert on selection
+        dropdown.addEventListener('change', function () {
+          if (this.value) {
+            alert('You selected: ' + this.value);
           }
         });
       }

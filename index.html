@@ -30,6 +30,17 @@
 </form>
 
 <script>
+  const bookings = await fetch("https://script.google.com/macros/s/AKfycbytZXGzsWgpnxG6lDJw5JJUhAD60SR53ki-AyVKLKKalryGk-q9aBxymzgBbQgsA9sYhA/exec")
+                        .then(res => res.json());
+
+const weekDates = getWeekDates(); // Your JS function to return 7-day list
+weekDates.forEach(day => {
+  const slots = ["10:00 AM", "11:00 AM", "12:00 PM"];
+  slots.forEach(slot => {
+    const isBooked = bookings.some(b => b.date === day && b.slot === slot);
+    // Render table row/cell
+  });
+});
 document.getElementById('bookingForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const formData = new FormData(e.target);
@@ -48,6 +59,7 @@ document.getElementById('bookingForm').addEventListener('submit', async (e) => {
   alert("Booking submitted!");
 });
 </script>
+    
     
   </body>
 </html>

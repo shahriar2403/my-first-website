@@ -1,162 +1,368 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>My Awesome Website</title>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f7f7f7;
-      padding: 40px;
-      color: #333;
+const DATA_ENTRY_SHEET_NAME = "Sheet1";
+const TIME_STAMP_COLUMN_NAME = "Timestamp";
+const FOLDER_ID = "";
+const FILE_LINK_COLUMN_NAME = "FileLink";
+const UPLOADED_FILE_NAME_COLUMN = "UploadedFileName";
+const FORM_FILE_INPUT_NAME = "theFile";
+
+function doPost(e) {
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(
+      DATA_ENTRY_SHEET_NAME
+    );
+    if (!sheet) {
+      throw new Error(`Sheet '${DATA_ENTRY_SHEET_NAME}' not found`);
     }
 
-    h1 {
-      color: #005f99;
+    const formData = e.postData.contents ? JSON.parse(e.postData.contents) : {};
+
+    // Handle file upload if present
+    let fileInfo = null;
+    if (formData.fileData) {
+      fileInfo = saveFile(formData.fileData);
+      delete formData.fileData; // Remove file data from form data
     }
 
-    img {
-      border-radius: 8px;
-      margin-bottom: 20px;
+    // Prepare data for sheet
+    const rowData = {
+      ...formData,
+      [TIME_STAMP_COLUMN_NAME]: new Date().toISOString(),
+    };
+
+    if (fileInfo) {
+      rowData[FILE_LINK_COLUMN_NAME] = fileInfo.url;
+      rowData[UPLOADED_FILE_NAME_COLUMN] = fileInfo.name;
     }
 
-    button {
-      padding: 10px 20px;
-      background-color: #008cba;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 16px;
-    }
+    appendToGoogleSheet(rowData, sheet);
 
-    button:hover {
-      background-color: #006c94;
-    }
+    return ContentService.createTextOutput(
+      JSON.stringify({
+        status: "success",
+        message: "Data submitted successfully",
+      })
+    ).setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    console.error(error);
+    return ContentService.createTextOutput(
+      JSON.stringify({
+        status: "error",
+        message: error.toString(),
+      })
+    ).setMimeType(ContentService.MimeType.JSON);
+  }
+}
 
-    select, input[type="date"] {
-      padding: 10px;
-      font-size: 16px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      margin-top: 10px;
-      margin-bottom: 20px;
-      background-color: white;
-      color: #333;
-      width: 300px;
-    }
+/**
+ * Saves a file to Google Drive
+ */
+function saveFile(fileData) {
+  try {
+    const blob = Utilities.newBlob(
+      Utilities.base64Decode(fileData.data),
+      fileData.mimeType,
+      fileData.fileName
+    );
+    const folder = DriveApp.getFolderById(FOLDER_ID);
+    const file = folder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    return {
+      url: `https://drive.google.com/uc?export=view&id=${file.getId()}`,
+      name: fileData.fileName,
+    };
+  } catch (error) {
+    console.error("File upload error:", error);
+    throw new Error("Failed to upload file: " + error.toString());
+  }
+}
 
-    select:focus, input[type="date"]:focus {
-      outline: none;
-      border-color: #007acc;
-      box-shadow: 0 0 5px rgba(0, 122, 204, 0.5);
-    }
+/**
+ * Appends data to the Google Sheet
+ */
+function appendToGoogleSheet(data, sheet) {
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
 
-    #selectedDate {
-      font-weight: bold;
-      color: #007acc;
-      margin-top: 10px;
-    }
-  </style>
-</head>
-<body>
-  <h1>Welcome to My Awesome Website</h1>
-  <p> Created by Shahriar Bappy (v4) </p>
-  <p>This website was created with the help of ChatGPT</p>
-
-  <h2>Here is an image:</h2>
-  <img src=" https://www.tbsnews.net/bangla/sites/default/files/styles/very_big_1/public/images/2025/04/01/metro_rail_bangladesh_tbs_2.jpeg?text=My+First+Image" alt="Metro Rail of Bangladesh">
-
-  <h2>Here is a button:</h2>
-  <button onclick="alert('You clicked the button!')">Click Me!</button>
-
-  <h2>Select an item from my list:</h2>
-  <select id="myDropdown">
-    <option value="">-- Select an option --</option>
-  </select>
-
-  <h2>Select a date:</h2>
-  <input type="date" id="calendar">
-  <p id="selectedDate">You selected: (none)</p>
-<h2>Booking Form</h2>
-<form id="bookingForm">
-  <label for="name">Your Name:</label><br>
-  <input type="text" id="name" placeholder="Enter your name"><br><br>
-
-  <label for="bookingDate">Booking Date:</label><br>
-  <input type="date" id="bookingDate"><br><br>
-
-  <button type="submit">Submit Booking</button>
-</form>
-
-<p id="confirmationMessage" style="font-weight: bold; color: green;"></p>
-  <script>
-    const csvUrl = 'https://raw.githubusercontent.com/shahriar2403/my-first-website/main/Meeting Room List.csv';
-
-    Papa.parse(csvUrl, {
-      download: true,
-      complete: function(results) {
-        const dropdown = document.getElementById('myDropdown');
-        results.data.forEach(function(row) {
-          if (row[0]) {
-            const option = document.createElement('option');
-            option.textContent = row[0];
-            option.value = row[0];
-            dropdown.appendChild(option);
-          }
-        });
-
-        dropdown.addEventListener('change', function () {
-          if (this.value) {
-            alert('You selected: ' + this.value);
-          }
-        });
-      }
-    });
-
-    // Date selection logic
-    const calendar = document.getElementById('calendar');
-    const selectedDateText = document.getElementById('selectedDate');
-
-    calendar.addEventListener('change', function () {
-      if (this.value) {
-        selectedDateText.textContent = 'You selected: ' + this.value;
-      }
-    });
-document.getElementById('bookingForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-
-  const name = document.getElementById('name').value.trim();
-  const date = document.getElementById('bookingDate').value.trim();
-  const confirmation = document.getElementById('confirmationMessage');
-
-  if (!name || !date) {
-    alert("Please enter your name and select a date.");
-    return;
+  // If sheet is empty, create headers
+  if (headers.length === 0 || headers[0] === "") {
+    const newHeaders = Object.keys(data);
+    sheet.getRange(1, 1, 1, newHeaders.length).setValues([newHeaders]);
+    headers = newHeaders;
   }
 
-  fetch("https://script.google.com/macros/s/AKfycbzas9czjYLITFfXZw942THEakxVSG2fFBT0rF4qj8dZpXJrrFVITsKG1lXU_lyy676kRA/exec", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      name: name,
-      date: date
-    })
-  })
-  .then(response => response.json())
-  .then(data => {
-    confirmation.textContent = `✅ Booking submitted successfully!`;
-    document.getElementById('bookingForm').reset();
-  })
-  .catch(error => {
-    console.error("Error!", error);
-    confirmation.textContent = `❌ Error: ${error.message}`;
-  });
-});
-  </script>
+  // Map data to header columns
+  const rowData = headers.map((header) => data[header] || "");
+  sheet.appendRow(rowData);
+}
+index.html
+<!DOCTYPE html>
+<html>
+  <head>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"
+    />
+    <title>Data Entry Form with File Upload</title>
+  </head>
+  <body>
+    <section class="hero is-primary is-bold">
+      <div class="hero-body">
+        <div class="container">
+          <h1 class="title">Data Entry Form</h1>
+        </div>
+      </div>
+    </section>
+    <form id="form" class="container m-4 pl-4">
+      <div class="field">
+        <label class="label">Client Name</label>
+        <div class="control">
+          <input
+            class="input"
+            type="text"
+            placeholder="Your Client Name"
+            name="Client Name"
+          />
+        </div>
+      </div>
+      <div class="field">
+        <label class="label">Email</label>
+        <div class="control">
+          <input
+            class="input"
+            type="email"
+            placeholder="Your Email"
+            name="Email"
+          />
+        </div>
+      </div>
+      <div class="field">
+        <label class="label">Password</label>
+        <div class="control">
+          <input
+            class="input"
+            type="password"
+            placeholder="Your Password"
+            name="Password"
+          />
+        </div>
+      </div>
+      <div class="field">
+        <label class="label">Date of Birth</label>
+        <div class="control">
+          <input
+            class="input"
+            type="date"
+            placeholder="Your Date of Birth"
+            name="DOB"
+          />
+        </div>
+      </div>
+      <div class="field">
+        <label class="label">Gender</label>
+        <div class="control">
+          <label class="radio">
+            <input type="radio" name="Gender" value="male" /> Male
+          </label>
+          <label class="radio">
+            <input type="radio" name="Gender" value="female" /> Female
+          </label>
+        </div>
+      </div>
 
-</body>
+      <div class="field">
+        <label class="label">Upload Document (Optional)</label>
+        <div class="control">
+          <div class="file has-name is-fullwidth">
+            <label class="file-label">
+              <input
+                class="file-input"
+                type="file"
+                name="theFile"
+                id="fileInput"
+                accept="*/*"
+              />
+              <span class="file-cta">
+                <span class="file-icon">
+                  <i class="fas fa-upload"></i>
+                </span>
+                <span class="file-label"> Choose a file… </span>
+              </span>
+              <span class="file-name" id="fileNameDisplay">
+                No file selected
+              </span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <input type="hidden" name="filename" id="actualFilename" />
+
+      <div class="field">
+        <label class="label">Agree to Terms</label>
+        <div class="control">
+          <label class="checkbox">
+            <input type="checkbox" name="Agree To Terms" value="yes" /> I agree
+            to the terms and conditions
+          </label>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label">Additional Information</label>
+        <div class="control">
+          <textarea
+            class="textarea"
+            placeholder="Any additional information"
+            name="Notes"
+          ></textarea>
+        </div>
+      </div>
+      <div class="field is-grouped">
+        <div class="control">
+          <button class="button is-primary" type="submit" id="submit-button">
+            Sign Up
+          </button>
+        </div>
+        <div class="control">
+          <button
+            class="button is-danger"
+            type="button"
+            onclick="document.getElementById('form').reset(); document.getElementById('fileNameDisplay').textContent = 'No file selected';"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </form>
+    <div
+      id="message"
+      style="
+        display: none;
+        margin: 20px;
+        padding: 10px;
+        border-radius: 4px;
+        font-weight: bold;
+      "
+    ></div>
+
+    <script>
+      const form = document.getElementById("form");
+      const submitButton = document.getElementById("submit-button");
+      const messageDiv = document.getElementById("message");
+      const fileInput = document.getElementById("fileInput");
+      const fileNameDisplay = document.getElementById("fileNameDisplay");
+
+      // Update displayed filename on file selection
+      fileInput.addEventListener("change", function () {
+        if (this.files && this.files.length > 0) {
+          fileNameDisplay.textContent = this.files[0].name;
+        } else {
+          fileNameDisplay.textContent = "No file selected";
+        }
+      });
+
+      // Function to handle file upload
+      async function uploadFile(file) {
+        return new Promise((resolve, reject) => {
+          const fr = new FileReader();
+          fr.onload = (e) => {
+            const data = e.target.result.split(",");
+            const obj = {
+              fileName: file.name,
+              mimeType: data[0].match(/:(\w.+);/)[1],
+              data: data[1],
+            };
+            resolve(obj);
+          };
+          fr.onerror = reject;
+          fr.readAsDataURL(file);
+        });
+      }
+
+      form.addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        messageDiv.textContent = "Submitting...";
+        messageDiv.style.display = "block";
+        messageDiv.style.backgroundColor = "beige";
+        messageDiv.style.color = "black";
+        submitButton.disabled = true;
+        submitButton.classList.add("is-loading");
+
+        try {
+          const formData = new FormData(this);
+          const formDataObj = {};
+
+          // Convert FormData to object
+          for (let [key, value] of formData.entries()) {
+            formDataObj[key] = value;
+          }
+
+          // Handle file upload if a file is selected
+          if (fileInput.files.length > 0) {
+            const fileObj = await uploadFile(fileInput.files[0]);
+            formDataObj.fileData = fileObj; // Add file data to form data
+          }
+
+          // Submit form data
+          const scriptURL =
+            "https://script.google.com/macros/s/AKfycbxXnyn7h1yxqy3RZtlaGvmDjrqnzF-TdqlF8conEb_GT8iiWS_8n9UmrOCJqJaAl3K_/exec";
+
+          const response = await fetch(scriptURL, {
+            redirect: "follow",
+            method: "POST",
+            body: JSON.stringify(formDataObj),
+            headers: {
+              "Content-Type": "text/plain;charset=utf-8",
+            },
+          });
+
+          const data = await response.json();
+
+          if (data.status === "success") {
+            messageDiv.textContent =
+              data.message || "Data submitted successfully!";
+            messageDiv.style.backgroundColor = "#48c78e";
+            messageDiv.style.color = "white";
+            form.reset();
+            fileNameDisplay.textContent = "No file selected";
+          } else {
+            throw new Error(data.message || "Submission failed");
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          messageDiv.textContent = "Error: " + error.message;
+          messageDiv.style.backgroundColor = "#f14668";
+          messageDiv.style.color = "white";
+        } finally {
+          submitButton.disabled = false;
+          submitButton.classList.remove("is-loading");
+
+          setTimeout(() => {
+            messageDiv.textContent = "";
+            messageDiv.style.display = "none";
+          }, 4000);
+        }
+      });
+
+      // Enhance cancel button to reset file input display
+      const cancelButton = form.querySelector("button.is-danger");
+      cancelButton.addEventListener("click", function () {
+        form.reset();
+        fileNameDisplay.textContent = "No file selected";
+        messageDiv.style.display = "none";
+      });
+    </script>
+  </body>
 </html>
+@shahriar2403
+Comment
+ 
+Leave a comment
+ 
+Footer
+© 2025 GitHub, Inc.
+Footer navigation
+Terms
+Privacy
+Security
+Status
+D
 

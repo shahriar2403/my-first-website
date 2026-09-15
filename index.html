@@ -67,16 +67,20 @@
   .empty-state{margin:auto;color:var(--muted);font-size:13px;text-align:center;padding:0 20px;}
   .error-state{margin:auto;color:var(--down);font-size:13px;text-align:center;padding:0 20px;}
 
-  .chart-header .sym{font-size:18px;font-weight:700;}
-  .chart-header .cname{font-size:12.5px;color:var(--muted);margin-bottom:8px;}
+
   .reason-box{margin:0 0 10px;padding:10px 12px;border-radius:10px;background:var(--accent-soft);border:1px solid var(--accent);font-size:12.5px;line-height:1.4;}
   .reason-box b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--accent);margin-bottom:3px;}
   .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11px;color:var(--muted);margin-bottom:8px;}
   .legend span{display:inline-flex;align-items:center;gap:4px;}
   .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
 
-  .chart-wrapper{width:100%;max-width:960px;aspect-ratio:9/5;margin:0 auto;}
+  .chart-wrapper{position:relative;width:100%;max-width:858px;aspect-ratio:9/5;margin:0 auto;}
   #chart-container{width:100%;height:100%;}
+  .chart-overlay{position:absolute;top:8px;left:12px;z-index:5;display:flex;flex-wrap:wrap;align-items:baseline;column-gap:8px;pointer-events:none;}
+  .chart-overlay .ov-sym{font-size:20px;font-weight:700;color:var(--text);}
+  .chart-overlay .ov-meta{font-size:11px;color:var(--muted);}
+  .chart-overlay .ov-ohlc{font-size:12px;font-weight:600;}
+  .chart-overlay .ov-vol{font-size:12px;color:var(--muted);}
 
   @media (max-width: 760px){
     .body{flex-direction:column;}
@@ -97,13 +101,17 @@
     <div class="stock-col" id="stockCol"><div class="empty-state">Loading screeners…</div></div>
     <div class="chart-col" id="chartCol">
       <div id="chartHeaderBox" style="display:none;">
-        <div class="chart-header">
-          <div class="sym" id="chartSym"></div>
-          <div class="cname" id="chartCname"></div>
-        </div>
         <div class="reason-box"><b>Why it was selected</b><span id="reasonText"></span></div>
         <div class="legend" id="legendBox"></div>
-        <div class="chart-wrapper"><div id="chart-container"></div></div>
+        <div class="chart-wrapper">
+          <div class="chart-overlay" id="chartOverlay">
+            <span class="ov-sym" id="ovSym"></span>
+            <span class="ov-meta">&middot; ShakChart &middot; 1D</span>
+            <span class="ov-ohlc" id="ovOhlc"></span>
+            <span class="ov-vol" id="ovVol"></span>
+          </div>
+          <div id="chart-container"></div>
+        </div>
       </div>
       <div class="empty-state" id="chartEmpty">Click a stock on the left to see its chart.</div>
     </div>
@@ -234,8 +242,7 @@ async function selectStock(stock){
   document.getElementById('chartEmpty').style.display = 'none';
   document.getElementById('chartEmpty').textContent = 'Click a stock on the left to see its chart.';
   document.getElementById('chartHeaderBox').style.display = 'block';
-  document.getElementById('chartSym').textContent = stock.symbol;
-  document.getElementById('chartCname').textContent = stock.name || '';
+  document.getElementById('ovSym').textContent = stock.symbol;
   document.getElementById('reasonText').textContent = stock.reason || '';
   if(chart){ chart.remove(); chart = null; }
   document.getElementById('chart-container').innerHTML = '';
@@ -248,6 +255,25 @@ async function selectStock(stock){
     document.getElementById('chartEmpty').style.display = 'block';
     document.getElementById('chartEmpty').textContent = `Couldn't load chart data for ${stock.symbol}. ${err.message}`;
   }
+}
+
+function fmtVol(v){
+  if(v>=1e6) return (v/1e6).toFixed(2)+'M';
+  if(v>=1e3) return (v/1e3).toFixed(1)+'K';
+  return String(v);
+}
+
+function updateOverlay(candles, idx){
+  const c = candles[idx];
+  const prevClose = idx>0 ? candles[idx-1].close : c.open;
+  const change = c.close - prevClose;
+  const pct = prevClose ? (change/prevClose*100) : 0;
+  const color = change>=0 ? cssVar('--up') : cssVar('--down');
+  const sign = change>=0 ? '+' : '';
+  const ohlcEl = document.getElementById('ovOhlc');
+  ohlcEl.textContent = `O${c.open} H${c.high} L${c.low} C${c.close} ${sign}${change.toFixed(2)} (${sign}${pct.toFixed(2)}%)`;
+  ohlcEl.style.color = color;
+  document.getElementById('ovVol').textContent = `Vol ${fmtVol(c.volume)}`;
 }
 
 function drawChart(stock, candles){
@@ -296,6 +322,14 @@ function drawChart(stock, candles){
   renderLegend(markers);
   chart.timeScale().fitContent();
   new ResizeObserver(()=>{ if(chart) chart.applyOptions({ width: container.clientWidth, height: container.clientHeight }); }).observe(container);
+
+  updateOverlay(candles, candles.length-1);
+  chart.subscribeCrosshairMove(param=>{
+    if(!param.time){ updateOverlay(candles, candles.length-1); return; }
+    const t = typeof param.time === 'string' ? param.time : `${param.time.year}-${String(param.time.month).padStart(2,'0')}-${String(param.time.day).padStart(2,'0')}`;
+    const idx = candles.findIndex(c=>c.time===t);
+    if(idx>=0) updateOverlay(candles, idx);
+  });
 }
 
 function renderLegend(markers){

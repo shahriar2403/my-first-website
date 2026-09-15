@@ -1,284 +1,325 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"
-    />
-    <title>Data Entry Form with File Upload</title>
-    
-  </head>
-  <body>
-    <section class="hero is-primary is-bold">
-      <div class="hero-body">
-        <div class="container">
-          <h1 class="title">Data Entry Form</h1>
-        </div>
-      </div>
-    </section>
-    <p> Created by Shahriar Bappy (v2) </p>
-    <form id="form" class="container m-4 pl-4">
-      <div class="field">
-        <label class="label">Client Name</label>
-        <div class="control">
-          <input
-            class="input"
-            type="text"
-            placeholder="Your Client Name"
-            name="Client Name"
-          />
-        </div>
-      </div>
-      <div class="field">
-        <label class="label">Email</label>
-        <div class="control">
-          <input
-            class="input"
-            type="email"
-            placeholder="Your Email"
-            name="Email"
-          />
-        </div>
-      </div>
-      <div class="field">
-        <label class="label">Password</label>
-        <div class="control">
-          <input
-            class="input"
-            type="password"
-            placeholder="Your Password"
-            name="Password"
-          />
-        </div>
-      </div>
-      <div class="field">
-        <label class="label">Date of Birth</label>
-        <div class="control">
-          <input
-            class="input"
-            type="date"
-            placeholder="Your Date of Birth"
-            name="DOB"
-          />
-        </div>
-        </div>
-      <div class="field">
-        <label class="label">Slots</label>
-        <div class="control">
-          <input
-            class="input"
-            type="text"
-            placeholder="Provide your slots"
-            name="Slots"
-          />
-        </div>
-      </div>
-      <div class="field">
-        <label class="label">Gender</label>
-        <div class="control">
-          <label class="radio">
-            <input type="radio" name="Gender" value="male" /> Male
-          </label>
-          <label class="radio">
-            <input type="radio" name="Gender" value="female" /> Female
-          </label>
-        </div>
-      </div>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DSE Screener Dashboard</title>
+<!--
+  ============================================================================
+  This is the PRODUCTION version: it reads real data from this repo's /data/
+  folder (pushed there by your Colab notebooks) instead of generating sample
+  data in the browser.
 
-      <div class="field">
-        <label class="label">Upload Document (Optional)</label>
-        <div class="control">
-          <div class="file has-name is-fullwidth">
-            <label class="file-label">
-              <input
-                class="file-input"
-                type="file"
-                name="theFile"
-                id="fileInput"
-                accept="*/*"
-              />
-              <span class="file-cta">
-                <span class="file-icon">
-                  <i class="fas fa-upload"></i>
-                </span>
-                <span class="file-label"> Choose a file… </span>
-              </span>
-              <span class="file-name" id="fileNameDisplay">
-                No file selected
-              </span>
-            </label>
-          </div>
-        </div>
-      </div>
-      <input type="hidden" name="filename" id="actualFilename" />
+  Expected files, relative to this index.html:
+    data/screeners.json                { "screeners": [ {id, name, desc, count} ] }
+    data/results/<screener_id>.json    { "stocks": [ {symbol, name?, reason, ...} ] }
+    data/ohlcv/<symbol>.json           { "candles": [ {time, open, high, low, close, volume} ] }
 
-      <div class="field">
-        <label class="label">Agree to Terms</label>
-        <div class="control">
-          <label class="checkbox">
-            <input type="checkbox" name="Agree To Terms" value="yes" /> I agree
-            to the terms and conditions
-          </label>
-        </div>
-      </div>
-      <div class="field">
-        <label class="label">Additional Information</label>
-        <div class="control">
-          <textarea
-            class="textarea"
-            placeholder="Any additional information"
-            name="Notes"
-          ></textarea>
-        </div>
-      </div>
-      <div class="field is-grouped">
-        <div class="control">
-          <button class="button is-primary" type="submit" id="submit-button">
-            Sign Up
-          </button>
-        </div>
-        <div class="control">
-          <button
-            class="button is-danger"
-            type="button"
-            onclick="document.getElementById('form').reset(); document.getElementById('fileNameDisplay').textContent = 'No file selected';"
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    </form>
-    <div
-      id="message"
-      style="
-        display: none;
-        margin: 20px;
-        padding: 10px;
-        border-radius: 4px;
-        font-weight: bold;
-      "
-    ></div>
+  Chart markers (pivot/mother/breakout/etc.) are handled per screener in
+  buildAnnotations() below. Right now only 'volband121' has real marker logic
+  (it just marks the latest 2 candles, which is inherently correct for any
+  history length). Add a case for each new screener id once its notebook
+  exports the actual dates of its key candles (e.g. stock.pivot_time,
+  stock.breakout_time) -- look them up in `candles` by matching `time`,
+  the same way the existing cases use them.
+  ============================================================================
+-->
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+  :root{
+    --bg:#f7f8fa; --panel:#ffffff; --border:#e3e5e9; --text:#16181d; --muted:#666c76;
+    --accent:#1a73e8; --accent-soft:#e8f0fe; --up:#26a69a; --down:#ef5350; --chip:#eef1f4;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0f1115; --panel:#161920; --border:#2a2e37; --text:#e8eaed; --muted:#9aa0a8;
+      --accent:#4f9eff; --accent-soft:#1c2733; --up:#26a69a; --down:#ef5350; --chip:#232830;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0f1115; --panel:#161920; --border:#2a2e37; --text:#e8eaed; --muted:#9aa0a8;
+    --accent:#4f9eff; --accent-soft:#1c2733; --up:#26a69a; --down:#ef5350; --chip:#232830;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  #app{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+  header{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--panel);}
+  header .logo{font-size:20px;}
+  header h1{font-size:15px;margin:0;font-weight:600;}
+  header .note{margin-left:auto;font-size:11px;color:var(--muted);}
 
-    <script>
-      const form = document.getElementById("form");
-      const submitButton = document.getElementById("submit-button");
-      const messageDiv = document.getElementById("message");
-      const fileInput = document.getElementById("fileInput");
-      const fileNameDisplay = document.getElementById("fileNameDisplay");
+  .screener-bar{flex:0 0 auto;display:flex;gap:8px;padding:10px 16px;overflow-x:auto;border-bottom:1px solid var(--border);background:var(--panel);}
+  .chip{flex:0 0 auto;white-space:nowrap;padding:7px 13px;border-radius:999px;border:1px solid var(--border);background:var(--chip);color:var(--text);font-size:12.5px;cursor:pointer;}
+  .chip.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .screener-desc{flex:0 0 auto;padding:6px 16px 0;font-size:11.5px;color:var(--muted);}
 
-      // Update displayed filename on file selection
-      fileInput.addEventListener("change", function () {
-        if (this.files && this.files.length > 0) {
-          fileNameDisplay.textContent = this.files[0].name;
-        } else {
-          fileNameDisplay.textContent = "No file selected";
-        }
-      });
+  .body{flex:1 1 auto;display:flex;min-height:0;}
+  .stock-col{width:320px;flex:0 0 320px;border-right:1px solid var(--border);background:var(--panel);overflow-y:auto;}
+  .chart-col{flex:1 1 auto;overflow-y:auto;padding:16px;display:flex;flex-direction:column;min-width:0;}
 
-      // Function to handle file upload
-      async function uploadFile(file) {
-        return new Promise((resolve, reject) => {
-          const fr = new FileReader();
-          fr.onload = (e) => {
-            const data = e.target.result.split(",");
-            const obj = {
-              fileName: file.name,
-              mimeType: data[0].match(/:(\w.+);/)[1],
-              data: data[1],
-            };
-            resolve(obj);
-          };
-          fr.onerror = reject;
-          fr.readAsDataURL(file);
-        });
+  .stock-item{margin:0 10px 8px;padding:10px 12px;border-radius:10px;cursor:pointer;border:1px solid transparent;}
+  .stock-item:hover{background:var(--chip);}
+  .stock-item.active{background:var(--accent-soft);border-color:var(--accent);}
+  .stock-item .sym{font-size:13.5px;font-weight:700;}
+  .stock-item .cname{font-size:11.5px;color:var(--muted);}
+  .stock-item .reason{font-size:11.5px;color:var(--muted);margin-top:5px;line-height:1.35;}
+
+  .empty-state{margin:auto;color:var(--muted);font-size:13px;text-align:center;padding:0 20px;}
+  .error-state{margin:auto;color:var(--down);font-size:13px;text-align:center;padding:0 20px;}
+
+  .chart-header .sym{font-size:18px;font-weight:700;}
+  .chart-header .cname{font-size:12.5px;color:var(--muted);margin-bottom:8px;}
+  .reason-box{margin:0 0 10px;padding:10px 12px;border-radius:10px;background:var(--accent-soft);border:1px solid var(--accent);font-size:12.5px;line-height:1.4;}
+  .reason-box b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--accent);margin-bottom:3px;}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11px;color:var(--muted);margin-bottom:8px;}
+  .legend span{display:inline-flex;align-items:center;gap:4px;}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+
+  .chart-wrapper{width:100%;max-width:960px;aspect-ratio:9/5;margin:0 auto;}
+  #chart-container{width:100%;height:100%;}
+
+  @media (max-width: 760px){
+    .body{flex-direction:column;}
+    .stock-col{width:100%;flex:0 0 auto;max-height:220px;border-right:none;border-bottom:1px solid var(--border);}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <span class="logo">📈</span>
+    <h1>DSE Screener Dashboard</h1>
+    <span class="note" id="updatedNote"></span>
+  </header>
+  <div class="screener-bar" id="screenerBar"></div>
+  <div class="screener-desc" id="screenerDesc"></div>
+  <div class="body">
+    <div class="stock-col" id="stockCol"><div class="empty-state">Loading screeners…</div></div>
+    <div class="chart-col" id="chartCol">
+      <div id="chartHeaderBox" style="display:none;">
+        <div class="chart-header">
+          <div class="sym" id="chartSym"></div>
+          <div class="cname" id="chartCname"></div>
+        </div>
+        <div class="reason-box"><b>Why it was selected</b><span id="reasonText"></span></div>
+        <div class="legend" id="legendBox"></div>
+        <div class="chart-wrapper"><div id="chart-container"></div></div>
+      </div>
+      <div class="empty-state" id="chartEmpty">Click a stock on the left to see its chart.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- data loading (real files pushed from Colab) ---------- */
+let manifest = null;                 // { screeners: [...], updated }
+const resultsCache = {};             // screener_id -> { stocks: [...] }
+const ohlcvCache = {};               // symbol -> { candles: [...] }
+
+async function fetchJSON(path){
+  const res = await fetch(path, { cache: 'no-store' });
+  if(!res.ok) throw new Error(`${path} -> HTTP ${res.status}`);
+  return res.json();
+}
+
+async function loadManifest(){
+  manifest = await fetchJSON('data/screeners.json');
+  document.getElementById('updatedNote').textContent = manifest.updated ? `Updated ${manifest.updated}` : '';
+  return manifest;
+}
+
+async function loadResults(screenerId){
+  if(!resultsCache[screenerId]) resultsCache[screenerId] = await fetchJSON(`data/results/${screenerId}.json`);
+  return resultsCache[screenerId];
+}
+
+async function loadOhlcv(symbol){
+  if(!ohlcvCache[symbol]) ohlcvCache[symbol] = await fetchJSON(`data/ohlcv/${symbol}.json`);
+  return ohlcvCache[symbol];
+}
+
+/* ---------- per-screener chart annotations: pivot/mother/breakout markers ---------- */
+function buildAnnotations(screenerId, candles, stock){
+  const len = candles.length;
+  const at = (fromEnd) => candles[len - fromEnd];
+  const byTime = (t) => candles.find(c => c.time === t);
+  const markers = [];
+  const priceLines = [];
+  let connector = null;
+  const LS = (window.LightweightCharts && LightweightCharts.LineStyle) || {Dashed:2, Dotted:1};
+
+  switch(screenerId){
+    case 'volband121': {
+      // Always the real last 2 sessions -- correct regardless of history length.
+      if(len >= 2){
+        const prev = at(2), latest = at(1);
+        markers.push({time:prev.time, position:'belowBar', color:'#f5a623', shape:'circle', text:'Prev Vol \u2713'});
+        markers.push({time:latest.time, position:'belowBar', color:'#1a73e8', shape:'circle', text:'Latest Vol \u2713'});
       }
+      break;
+    }
+    // ---- Add a case per new screener id here once its notebook exports the
+    // ---- actual dates of its key candles, e.g.:
+    // case 'vswing': {
+    //   const pivot = byTime(stock.pivot_time), mother = byTime(stock.mother_time), breakout = byTime(stock.breakout_time);
+    //   if(pivot) markers.push({time:pivot.time, position:'belowBar', color:'#f5a623', shape:'circle', text:'Pivot Low'});
+    //   if(mother) markers.push({time:mother.time, position:'belowBar', color:'#7c4dff', shape:'square', text:'Mother'});
+    //   if(breakout) markers.push({time:breakout.time, position:'aboveBar', color:'#1a73e8', shape:'arrowUp', text:'Long'});
+    //   if(mother) priceLines.push({price:mother.high, color:'#1a73e8', title:'Mother High', lineStyle:LS.Dashed});
+    //   break;
+    // }
+  }
+  return { markers, priceLines, connector };
+}
 
-      form.addEventListener("submit", async function (e) {
-        e.preventDefault();
+/* ---------- state + rendering ---------- */
+let activeScreenerId = null, activeSymbol = null, chart = null;
 
-        messageDiv.textContent = "Submitting...";
-        messageDiv.style.display = "block";
-        messageDiv.style.backgroundColor = "beige";
-        messageDiv.style.color = "black";
-        submitButton.disabled = true;
-        submitButton.classList.add("is-loading");
+function renderScreenerBar(){
+  const bar = document.getElementById('screenerBar');
+  bar.innerHTML = '';
+  manifest.screeners.forEach(s=>{
+    const b = document.createElement('button');
+    b.className = 'chip' + (s.id===activeScreenerId?' active':'');
+    b.textContent = `${s.name}${s.count!=null ? ` (${s.count})` : ''}`;
+    b.onclick = () => selectScreener(s.id);
+    bar.appendChild(b);
+  });
+  const active = manifest.screeners.find(s=>s.id===activeScreenerId);
+  document.getElementById('screenerDesc').textContent = active ? active.desc : '';
+}
 
-        try {
-          const formData = new FormData(this);
-          const formDataObj = {};
+async function selectScreener(id){
+  activeScreenerId = id; activeSymbol = null;
+  renderScreenerBar();
+  showEmptyChart();
+  const col = document.getElementById('stockCol');
+  col.innerHTML = '<div class="empty-state">Loading stocks…</div>';
+  try{
+    const results = await loadResults(id);
+    renderStockList(results.stocks || []);
+  }catch(err){
+    col.innerHTML = `<div class="error-state">Couldn't load results for this screener.<br>${err.message}</div>`;
+  }
+}
 
-          // Convert FormData to object
-          for (let [key, value] of formData.entries()) {
-            formDataObj[key] = value;
-          }
+function renderStockList(stocks){
+  const col = document.getElementById('stockCol');
+  col.innerHTML = '';
+  if(stocks.length === 0){
+    col.innerHTML = '<div class="empty-state">No stocks passed this screener today.</div>';
+    return;
+  }
+  stocks.forEach(st=>{
+    const el = document.createElement('div');
+    el.className = 'stock-item' + (st.symbol===activeSymbol?' active':'');
+    el.innerHTML = `<div class="sym">${st.symbol}</div>${st.name?`<div class="cname">${st.name}</div>`:''}<div class="reason">${st.reason||''}</div>`;
+    el.onclick = () => selectStock(st);
+    col.appendChild(el);
+  });
+}
 
-          // Handle file upload if a file is selected
-          if (fileInput.files.length > 0) {
-            const fileObj = await uploadFile(fileInput.files[0]);
-            formDataObj.fileData = fileObj; // Add file data to form data
-          }
+function showEmptyChart(){
+  document.getElementById('chartHeaderBox').style.display = 'none';
+  document.getElementById('chartEmpty').style.display = 'block';
+  document.getElementById('chartEmpty').textContent = 'Click a stock on the left to see its chart.';
+  if(chart){ chart.remove(); chart = null; }
+}
 
-          // Submit form data
-          const scriptURL =
-            "https://script.google.com/macros/s/AKfycbw6zUhOG_K2Eh0xWhfL2idkZClkC36F1HOxEQz-Woay2O6Dns90J2FTYR-W-DCEKL9b5A/exec";
-          const response = await fetch(scriptURL, {
-            redirect: "follow",
-            method: "POST",
-            body: JSON.stringify(formDataObj),
-            headers: {
-              "Content-Type": "text/plain;charset=utf-8",
-            },
-          });
+function cssVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
 
-          const data = await response.json();
+async function selectStock(stock){
+  activeSymbol = stock.symbol;
+  renderStockList((resultsCache[activeScreenerId] || {stocks:[]}).stocks);
+  document.getElementById('chartEmpty').style.display = 'none';
+  document.getElementById('chartEmpty').textContent = 'Click a stock on the left to see its chart.';
+  document.getElementById('chartHeaderBox').style.display = 'block';
+  document.getElementById('chartSym').textContent = stock.symbol;
+  document.getElementById('chartCname').textContent = stock.name || '';
+  document.getElementById('reasonText').textContent = stock.reason || '';
+  if(chart){ chart.remove(); chart = null; }
+  document.getElementById('chart-container').innerHTML = '';
 
-          if (data.status === "success") {
-            messageDiv.textContent =
-              data.message || "Data submitted successfully!";
-            messageDiv.style.backgroundColor = "#48c78e";
-            messageDiv.style.color = "white";
-            form.reset();
-            fileNameDisplay.textContent = "No file selected";
-          } else {
-            throw new Error(data.message || "Submission failed");
-          }
-        } catch (error) {
-          console.error("Error:", error);
-          messageDiv.textContent = "Error: " + error.message;
-          messageDiv.style.backgroundColor = "#f14668";
-          messageDiv.style.color = "white";
-        } finally {
-          submitButton.disabled = false;
-          submitButton.classList.remove("is-loading");
+  try{
+    const data = await loadOhlcv(stock.symbol);
+    drawChart(stock, data.candles || []);
+  }catch(err){
+    document.getElementById('chartHeaderBox').style.display = 'none';
+    document.getElementById('chartEmpty').style.display = 'block';
+    document.getElementById('chartEmpty').textContent = `Couldn't load chart data for ${stock.symbol}. ${err.message}`;
+  }
+}
 
-          setTimeout(() => {
-            messageDiv.textContent = "";
-            messageDiv.style.display = "none";
-          }, 4000);
-        }
-      });
+function drawChart(stock, candles){
+  const container = document.getElementById('chart-container');
+  if(candles.length === 0){
+    document.getElementById('chartHeaderBox').style.display = 'none';
+    document.getElementById('chartEmpty').style.display = 'block';
+    document.getElementById('chartEmpty').textContent = `No chart data found for ${stock.symbol}.`;
+    return;
+  }
 
-      // Enhance cancel button to reset file input display
-      const cancelButton = form.querySelector("button.is-danger");
-      cancelButton.addEventListener("click", function () {
-        form.reset();
-        fileNameDisplay.textContent = "No file selected";
-        messageDiv.style.display = "none";
-      });
-    </script>
-  </body>
+  chart = LightweightCharts.createChart(container, {
+    width: container.clientWidth, height: container.clientHeight,
+    layout:{ background:{ color:'transparent' }, textColor: cssVar('--text') },
+    grid:{ vertLines:{ color: cssVar('--border') }, horzLines:{ color: cssVar('--border') } },
+    rightPriceScale:{ borderColor: cssVar('--border') },
+    timeScale:{ borderColor: cssVar('--border') },
+    crosshair:{ mode:0 }
+  });
+
+  const candleSeries = chart.addCandlestickSeries({
+    upColor: cssVar('--up'), downColor: cssVar('--down'),
+    borderUpColor: cssVar('--up'), borderDownColor: cssVar('--down'),
+    wickUpColor: cssVar('--up'), wickDownColor: cssVar('--down')
+  });
+  candleSeries.priceScale().applyOptions({ scaleMargins:{ top:0.08, bottom:0.32 } });
+  candleSeries.setData(candles.map(c=>({time:c.time, open:c.open, high:c.high, low:c.low, close:c.close})));
+
+  const volumeSeries = chart.addHistogramSeries({ priceFormat:{ type:'volume' }, priceScaleId:'' });
+  volumeSeries.priceScale().applyOptions({ scaleMargins:{ top:0.75, bottom:0 } });
+  volumeSeries.setData(candles.map(c=>({time:c.time, value:c.volume, color: c.close>=c.open ? 'rgba(38,166,154,0.55)' : 'rgba(239,83,80,0.55)'})));
+
+  const smaLen = 121, smaData = [];
+  for(let i=0;i<candles.length;i++){
+    if(i < smaLen-1) continue;
+    let sum=0; for(let j=i-smaLen+1;j<=i;j++) sum+=candles[j].volume;
+    smaData.push({ time: candles[i].time, value: Math.round(sum/smaLen) });
+  }
+  if(smaData.length) chart.addLineSeries({ priceScaleId:'', color: cssVar('--accent'), lineWidth:1 }).setData(smaData);
+
+  const { markers, priceLines, connector } = buildAnnotations(activeScreenerId, candles, stock);
+  candleSeries.setMarkers(markers);
+  priceLines.forEach(pl => candleSeries.createPriceLine({ price: pl.price, color: pl.color, lineWidth:1, lineStyle: pl.lineStyle, axisLabelVisible:true, title: pl.title }));
+  if(connector){ chart.addLineSeries({ color:'#8a8f98', lineWidth:1, lineStyle:1 }).setData(connector); }
+
+  renderLegend(markers);
+  chart.timeScale().fitContent();
+  new ResizeObserver(()=>{ if(chart) chart.applyOptions({ width: container.clientWidth, height: container.clientHeight }); }).observe(container);
+}
+
+function renderLegend(markers){
+  const box = document.getElementById('legendBox');
+  const seen = {};
+  const items = [];
+  markers.forEach(m=>{ if(!seen[m.text]){ seen[m.text]=true; items.push(m); } });
+  box.innerHTML = items.map(m=>`<span><span class="dot" style="background:${m.color}"></span>${m.text}</span>`).join('');
+}
+
+/* ---------- init ---------- */
+(async function init(){
+  try{
+    await loadManifest();
+    if(!manifest.screeners || manifest.screeners.length === 0){
+      document.getElementById('stockCol').innerHTML = '<div class="empty-state">No screeners published yet.</div>';
+      return;
+    }
+    activeScreenerId = manifest.screeners[0].id;
+    await selectScreener(activeScreenerId);
+  }catch(err){
+    document.getElementById('stockCol').innerHTML = `<div class="error-state">Couldn't load data/screeners.json.<br>${err.message}</div>`;
+  }
+})();
+</script>
+</body>
 </html>
-@shahriar2403
-Comment
- 
-Leave a comment
- 
-Footer
-© 2025 GitHub, Inc.
-Footer navigation
-Terms
-Privacy
-Security
-Status
-D
-

@@ -13,7 +13,7 @@
   Expected files, relative to this index.html:
     data/screeners.json                { "screeners": [ {id, name, desc, count} ] }
     data/results/<screener_id>.json    { "stocks": [ {symbol, name?, reason, ...} ] }
-    data/ohlcv/<symbol>.json           { "candles": [ {time, open, high, low, close, volume} ] }
+    data/ohlcv/<symbol>.json           { "candles": [...], "levels": [ {type:"resistance"|"support", price, strength} ] }
 
   Chart markers (pivot/mother/breakout/etc.) are handled per screener in
   buildAnnotations() below. Right now only 'volband121' has real marker logic
@@ -249,7 +249,7 @@ async function selectStock(stock){
 
   try{
     const data = await loadOhlcv(stock.symbol);
-    drawChart(stock, data.candles || []);
+    drawChart(stock, data.candles || [], data.levels || []);
   }catch(err){
     document.getElementById('chartHeaderBox').style.display = 'none';
     document.getElementById('chartEmpty').style.display = 'block';
@@ -276,7 +276,20 @@ function updateOverlay(candles, idx){
   document.getElementById('ovVol').textContent = `Vol ${fmtVol(c.volume)}`;
 }
 
-function drawChart(stock, candles){
+function renderSRLevels(candleSeries, levels){
+  (levels||[]).forEach(lvl=>{
+    const isRes = lvl.type === 'resistance';
+    const strength = lvl.strength || 1;
+    const alpha = Math.min(0.12 + strength*0.08, 0.55);
+    const color = isRes ? `rgba(255,0,0,${alpha})` : `rgba(0,0,255,${alpha})`;
+    candleSeries.createPriceLine({
+      price: lvl.price, color, lineWidth: strength>=3 ? 2 : 1,
+      lineStyle: 0, axisLabelVisible: false, title: ''
+    });
+  });
+}
+
+function drawChart(stock, candles, levels){
   const container = document.getElementById('chart-container');
   if(candles.length === 0){
     document.getElementById('chartHeaderBox').style.display = 'none';
@@ -319,6 +332,7 @@ function drawChart(stock, candles){
   priceLines.forEach(pl => candleSeries.createPriceLine({ price: pl.price, color: pl.color, lineWidth:1, lineStyle: pl.lineStyle, axisLabelVisible:true, title: pl.title }));
   if(connector){ chart.addLineSeries({ color:'#8a8f98', lineWidth:1, lineStyle:1 }).setData(connector); }
 
+  renderSRLevels(candleSeries, levels);
   renderLegend(markers);
   chart.timeScale().fitContent();
   new ResizeObserver(()=>{ if(chart) chart.applyOptions({ width: container.clientWidth, height: container.clientHeight }); }).observe(container);

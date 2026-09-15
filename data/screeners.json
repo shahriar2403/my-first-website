@@ -1,0 +1,11 @@
+{
+  "screeners": [
+    {
+      "id": "volband121",
+      "name": "Volume Band Above 121-SMA",
+      "desc": "Latest 2 sessions' volume both sit between 1x and 3x their own 121-day average",
+      "count": 17
+    }
+  ],
+  "updated": "2026-09-15 20:26"
+}

@@ -1,0 +1,74 @@
+{
+  "screener_id": "volband121",
+  "generated_at": "2026-09-15T20:26:29.986816+06:00",
+  "stocks": [
+    {
+      "symbol": "FARCHEM",
+      "reason": "Volume stayed inside the 1x-3x band above its 121-day average on both of the last 2 sessions (latest 1.09x, previous 1.49x); latest close sits 99.3% of the way to the day's high."
+    },
+    {
+      "symbol": "GBBPOWER",
+      "reason": "Volume stayed inside the 1x-3x band above its 121-day average on both of the last 2 sessions (latest 2.09x, previous 1.65x); latest close sits 99.3% of the way to the day's high."
+    },
+    {
+      "symbol": "SAIHAMTEX",
+      "reason": "Volume stayed inside the 1x-3x band above its 121-day average on both of the last 2 sessions (latest 1.18x, previous 1.16x); latest close sits 99.7% of the way to the day's high."
+    },
+    {
+      "symbol": "PTL",
+      "reason": "Volume stayed inside the 1x-3x band above its 121-day average on both of the last 2 sessions (latest 1.27x, previous 2.18x); latest close sits 99.9% of the way to the day's high."
+    },
+    {
+      "symbol": "SOUTHEASTB",
+      "reason": "Volume stayed inside the 1x-3x band above its 121-day average on both of the last 2 sessions (latest 2.24x, previous 2.03x); latest close sits 99.2% of the way to the day's high."
+    },
+    {
+      "symbol": "TRUSTBANK",
+      "reason": "Volume stayed inside the 1x-3x band above its 121-day average on both of the last 2 sessions (latest 1.01x, previous 1.39x); latest close sits 99.3% of the way to the day's high."
+    },
+    {
+      "symbol": "DBH1STMF",
+      "reason": "Volume stayed inside the 1x-3x band above its 121-day average on both of the last 2 sessions (latest 1.02x, previous 1.04x); latest close sits 96.4% of the way to the day's high."
+    },
+    {
+      "symbol": "PF1STMF",
+      "reason": "Volume stayed inside the 1x-3x band above its 121-day average on both of the last 2 sessions (latest 1.19x, previous 1.95x); latest close sits 98.9% of the way to the day's high."
+    },
+    {
+      "symbol": "SHARPIND",
+      "reason": "Volume stayed inside the 1x-3x band above its 121-day average on both of the last 2 sessions (latest 2.85x, previous 2.61x); latest close sits 98.4% of the way to the day's high."
+    },
+    {
+      "symbol": "RELIANCE1",
+      "reason": "Volume stayed inside the 1x-3x band above its 121-day average on both of the last 2 sessions (latest 1.21x, previous 1.25x); latest close sits 97.6% of the way to the day's high."
+    },
+    {
+      "symbol": "TAKAFULINS",
+      "reason": "Volume stayed inside the 1x-3x band above its 121-day average on both of the last 2 sessions (latest 1.23x, previous 1.92x); latest close sits 99.5% of the way to the day's high."
+    },
+    {
+      "symbol": "HWAWELLTEX",
+      "reason": "Volume stayed inside the 1x-3x band above its 121-day average on both of the last 2 sessions (latest 1.40x, previous 1.50x); latest close sits 98.9% of the way to the day's high."
+    },
+    {
+      "symbol": "JAMUNABANK",
+      "reason": "Volume stayed inside the 1x-3x band above its 121-day average on both of the last 2 sessions (latest 1.03x, previous 1.57x); latest close sits 97.5% of the way to the day's high."
+    },
+    {
+      "symbol": "MATINSPINN",
+      "reason": "Volume stayed inside the 1x-3x band above its 121-day average on both of the last 2 sessions (latest 1.16x, previous 1.37x); latest close sits 98.8% of the way to the day's high."
+    },
+    {
+      "symbol": "STANDARINS",
+      "reason": "Volume stayed inside the 1x-3x band above its 121-day average on both of the last 2 sessions (latest 1.64x, previous 2.63x); latest close sits 98.5% of the way to the day's high."
+    },
+    {
+      "symbol": "ISLAMIINS",
+      "reason": "Volume stayed inside the 1x-3x band above its 121-day average on both of the last 2 sessions (latest 1.23x, previous 1.96x); latest close sits 98.4% of the way to the day's high."
+    },
+    {
+      "symbol": "WALTONHIL",
+      "reason": "Volume stayed inside the 1x-3x band above its 121-day average on both of the last 2 sessions (latest 2.11x, previous 1.28x); latest close sits 99.7% of the way to the day's high."
+    }
+  ]
+}
